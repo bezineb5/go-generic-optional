@@ -58,14 +58,6 @@ func If[T any, R any](optional Optional[T], handler func(T) R) Optional[R] {
 	return New[R]()
 }
 
-// Map allows you to transform the value of an optional if it exists, otherwise return
-func Map[T any, R any](optional Optional[T], mapper func(T) R) Optional[R] {
-	if item, ok := optional.Get(); ok {
-		return Of(mapper(item))
-	}
-	return New[R]()
-}
-
 // FlatMap allows you to transform the value of an optional if it exists, otherwise return
 func FlatMap[T any, R any](optional Optional[T], mapper func(T) Optional[R]) Optional[R] {
 	if item, ok := optional.Get(); ok {
@@ -75,19 +67,19 @@ func FlatMap[T any, R any](optional Optional[T], mapper func(T) Optional[R]) Opt
 }
 
 // Filter allows you to filter the value of an optional if it exists, otherwise return
-func Filter[T any](optional Optional[T], predicate func(T) bool) Optional[T] {
-	if item, ok := optional.Get(); ok && predicate(item) {
-		return optional
+func (o Optional[T]) Filter(predicate func(T) bool) Optional[T] {
+	if item, ok := o.Get(); ok && predicate(item) {
+		return o
 	}
 	return New[T]()
 }
 
 // OrElse allows you to return a default value if the optional is empty
-func OrElse[T any](optional Optional[T], defaultValue T) T {
-	if item, ok := optional.Get(); ok {
-		return item
+func (o Optional[T]) OrElse(defaultValue T) Optional[T] {
+	if o.Exists() {
+		return o
 	}
-	return defaultValue
+	return Of(defaultValue)
 }
 
 // MarshalJSON implements the json.Marshaller interface. Optionals will
