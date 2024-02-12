@@ -31,10 +31,10 @@ func TestMustGet(t *testing.T) {
 	anOptional := New[string]()
 
 	defer func() {
-        if r := recover(); r == nil {
-            t.Errorf("The code did not panic")
-        }
-    }()
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
 
 	anOptional.MustGet()
 }
@@ -44,7 +44,7 @@ func TestIf(t *testing.T) {
 
 	ranIf := false
 
-	If(anOptional, func (value string) bool {
+	If(anOptional, func(value string) bool {
 		ranIf = true
 		return true
 	})
@@ -53,7 +53,7 @@ func TestIf(t *testing.T) {
 
 	anOptional = Of("hello")
 
-	If(anOptional, func (value string) bool {
+	If(anOptional, func(value string) bool {
 		ranIf = true
 		return true
 	})
@@ -92,4 +92,81 @@ func TestUnmarshall(t *testing.T) {
 
 	err = anOptional.UnmarshalJSON([]byte(`"asdjl:1k2l;j'""`))
 	require.NotNil(t, err)
+}
+
+func TestMap(t *testing.T) {
+	// Test when the optional is empty
+	emptyOptional := New[string]()
+	mappedOptional := Map(emptyOptional, func(item string) int {
+		return len(item)
+	})
+	require.False(t, mappedOptional.Exists())
+
+	// Test when the optional is not empty
+	nonEmptyOptional := Of("hello")
+	mappedOptional = Map(nonEmptyOptional, func(item string) int {
+		return len(item)
+	})
+	require.True(t, mappedOptional.Exists())
+	require.Equal(t, 5, mappedOptional.MustGet())
+}
+
+func TestFilter(t *testing.T) {
+	// Test when the optional is empty
+	emptyOptional := New[string]()
+	filteredOptional := Filter(emptyOptional, func(item string) bool {
+		return len(item) > 0
+	})
+	require.False(t, filteredOptional.Exists())
+
+	// Test when the optional is not empty and the predicate returns true
+	nonEmptyOptional := Of("hello")
+	filteredOptional = Filter(nonEmptyOptional, func(item string) bool {
+		return len(item) > 0
+	})
+	require.True(t, filteredOptional.Exists())
+	require.Equal(t, "hello", filteredOptional.MustGet())
+
+	// Test when the optional is not empty and the predicate returns false
+	filteredOptional = Filter(nonEmptyOptional, func(item string) bool {
+		return len(item) > 10
+	})
+	require.False(t, filteredOptional.Exists())
+}
+
+func TestFlatMap(t *testing.T) {
+	// Test when the optional is empty
+	emptyOptional := New[string]()
+	mappedOptional := FlatMap(emptyOptional, func(item string) Optional[int] {
+		return Of(len(item))
+	})
+	require.False(t, mappedOptional.Exists())
+
+	// Test when the optional is not empty
+	nonEmptyOptional := Of("hello")
+	mappedOptional = FlatMap(nonEmptyOptional, func(item string) Optional[int] {
+		return Of(len(item))
+	})
+	require.True(t, mappedOptional.Exists())
+	require.Equal(t, 5, mappedOptional.MustGet())
+
+	// Test when the optional is not empty and the mapper returns an empty optional
+	mappedOptional = FlatMap(nonEmptyOptional, func(item string) Optional[int] {
+		return New[int]()
+	})
+	require.False(t, mappedOptional.Exists())
+}
+
+func TestOrElse(t *testing.T) {
+	// Test when the optional is empty
+	emptyOptional := New[string]()
+	defaultValue := "default"
+	result := OrElse(emptyOptional, defaultValue)
+	require.Equal(t, defaultValue, result)
+
+	// Test when the optional is not empty
+	nonEmptyOptional := Of("hello")
+	defaultValue = "default"
+	result = OrElse(nonEmptyOptional, defaultValue)
+	require.Equal(t, "hello", result)
 }
